@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { MeshStandardMaterial, PointLight, BoxGeometry, CylinderGeometry } from 'three';
+import { MeshStandardMaterial, MeshPhysicalMaterial, PointLight, BoxGeometry, CylinderGeometry } from 'three';
 import { debugData } from './store';
 
 // Shared geometries and materials for performance
@@ -10,13 +10,13 @@ const sharedMaterials = {
   rubber: new MeshStandardMaterial({ color: "#111111", roughness: 0.9, metalness: 0.1 }),
   sovietBody: new MeshStandardMaterial({ color: "#d4d4ce", roughness: 0.4, metalness: 0.3 }),
   euroBody: new MeshStandardMaterial({ color: "#fef08a", roughness: 0.3, metalness: 0.4 }),
-  sportsBody: new MeshStandardMaterial({ color: "#ef4444", roughness: 0.2, metalness: 0.6, clearcoat: 1.0, clearcoatRoughness: 0.1 }),
-  muscleBody: new MeshStandardMaterial({ color: "#3b82f6", roughness: 0.25, metalness: 0.5, clearcoat: 0.8 }),
+  sportsBody: new MeshPhysicalMaterial({ color: "#ef4444", roughness: 0.2, metalness: 0.6, clearcoat: 1.0, clearcoatRoughness: 0.1 }),
+  muscleBody: new MeshPhysicalMaterial({ color: "#3b82f6", roughness: 0.25, metalness: 0.5, clearcoat: 0.8 }),
   volvoBody: new MeshStandardMaterial({ color: "#f8fafc", roughness: 0.3, metalness: 0.4 }),
-  cyberBody: new MeshStandardMaterial({ color: "#18181b", metalness: 0.9, roughness: 0.1, clearcoat: 1.0 }),
+  cyberBody: new MeshPhysicalMaterial({ color: "#18181b", metalness: 0.9, roughness: 0.1, clearcoat: 1.0 }),
   cyberAccent: new MeshStandardMaterial({ color: "#06b6d4", emissive: "#06b6d4", emissiveIntensity: 2 }),
   truckBody: new MeshStandardMaterial({ color: "#166534", roughness: 0.6, metalness: 0.2 }),
-  f1Body: new MeshStandardMaterial({ color: "#dc2626", metalness: 0.5, roughness: 0.2, clearcoat: 1.0 }),
+  f1Body: new MeshPhysicalMaterial({ color: "#dc2626", metalness: 0.5, roughness: 0.2, clearcoat: 1.0 }),
 };
 
 function BrakeLight({ position, args, geometry: Geometry = 'boxGeometry', rotation }: any) {
@@ -67,11 +67,11 @@ function HeadLight({ position, args, geometry: Geometry = 'boxGeometry', rotatio
   );
 }
 
-export function SovietClassic() {
+export function SovietClassic({ damage = 0 }: { damage?: number }) {
   return (
     <>
       {/* Main Body */}
-      <mesh position={[0, -0.2, 0]} castShadow receiveShadow material={sharedMaterials.sovietBody}>
+      <mesh position={[0, -0.2, 0]} scale={[1, 1, 1 - damage * 0.1]} castShadow receiveShadow material={sharedMaterials.sovietBody}>
         <boxGeometry args={[1.65, 0.45, 4.1]} />
       </mesh>
       {/* Cabin */}
@@ -87,27 +87,34 @@ export function SovietClassic() {
         <boxGeometry args={[1.2, 0.25, 0.05]} />
       </mesh>
       {/* Headlights (Round) */}
-      <HeadLight position={[0.5, -0.15, 2.08]} rotation={[Math.PI / 2, 0, 0]} args={[0.12, 0.12, 0.05, 16]} geometry="cylinderGeometry" />
-      <HeadLight position={[-0.5, -0.15, 2.08]} rotation={[Math.PI / 2, 0, 0]} args={[0.12, 0.12, 0.05, 16]} geometry="cylinderGeometry" />
+      {damage < 0.6 && <HeadLight position={[0.5, -0.15, 2.08]} rotation={[Math.PI / 2, 0, 0]} args={[0.12, 0.12, 0.05, 16]} geometry="cylinderGeometry" />}
+      {damage < 0.9 && <HeadLight position={[-0.5, -0.15, 2.08]} rotation={[Math.PI / 2, 0, 0]} args={[0.12, 0.12, 0.05, 16]} geometry="cylinderGeometry" />}
       {/* Chrome Bumpers */}
-      <mesh position={[0, -0.35, 2.1]} castShadow receiveShadow material={sharedMaterials.chrome}>
+      <mesh position={[0, -0.35 - damage * 0.1, 2.1]} rotation={[damage * 0.4, damage * 0.1, 0]} castShadow receiveShadow material={sharedMaterials.chrome}>
         <boxGeometry args={[1.7, 0.1, 0.15]} />
       </mesh>
-      <mesh position={[0, -0.35, -2.1]} castShadow receiveShadow material={sharedMaterials.chrome}>
+      <mesh position={[0, -0.35 - damage * 0.1, -2.1]} rotation={[-damage * 0.4, -damage * 0.1, 0]} castShadow receiveShadow material={sharedMaterials.chrome}>
         <boxGeometry args={[1.7, 0.1, 0.15]} />
       </mesh>
       {/* Taillights */}
       <BrakeLight position={[0.6, -0.15, -2.06]} args={[0.2, 0.4, 0.05]} />
       <BrakeLight position={[-0.6, -0.15, -2.06]} args={[0.2, 0.4, 0.05]} />
+      {/* Scratches */}
+      {damage > 0.3 && (
+        <mesh position={[0.83, -0.1, 0]} rotation={[0, Math.PI / 2, 0]} castShadow receiveShadow>
+          <planeGeometry args={[2, 0.2]} />
+          <meshStandardMaterial color="#222" roughness={0.9} transparent opacity={damage * 0.8} depthWrite={false} />
+        </mesh>
+      )}
     </>
   );
 }
 
-export function EuroCompact() {
+export function EuroCompact({ damage = 0 }: { damage?: number }) {
   return (
     <>
       {/* Main Body */}
-      <mesh position={[0, -0.2, 0]} castShadow receiveShadow material={sharedMaterials.euroBody}>
+      <mesh position={[0, -0.2, 0]} scale={[1, 1, 1 - damage * 0.1]} castShadow receiveShadow material={sharedMaterials.euroBody}>
         <boxGeometry args={[1.5, 0.4, 3.2]} />
       </mesh>
       {/* Cabin (Rounded) */}
@@ -119,26 +126,33 @@ export function EuroCompact() {
         <boxGeometry args={[1.25, 0.3, 1.55]} />
       </mesh>
       {/* Headlights (Round) */}
-      <HeadLight position={[0.45, -0.1, 1.6]} rotation={[Math.PI / 2, 0, 0]} args={[0.15, 0.15, 0.05, 16]} geometry="cylinderGeometry" />
-      <HeadLight position={[-0.45, -0.1, 1.6]} rotation={[Math.PI / 2, 0, 0]} args={[0.15, 0.15, 0.05, 16]} geometry="cylinderGeometry" />
+      {damage < 0.6 && <HeadLight position={[0.45, -0.1, 1.6]} rotation={[Math.PI / 2, 0, 0]} args={[0.15, 0.15, 0.05, 16]} geometry="cylinderGeometry" />}
+      {damage < 0.9 && <HeadLight position={[-0.45, -0.1, 1.6]} rotation={[Math.PI / 2, 0, 0]} args={[0.15, 0.15, 0.05, 16]} geometry="cylinderGeometry" />}
       {/* Chrome Bumpers */}
-      <mesh position={[0, -0.35, 1.65]} castShadow receiveShadow material={sharedMaterials.chrome}>
+      <mesh position={[0, -0.35 - damage * 0.1, 1.65]} rotation={[damage * 0.4, damage * 0.1, 0]} castShadow receiveShadow material={sharedMaterials.chrome}>
         <boxGeometry args={[1.4, 0.08, 0.1]} />
       </mesh>
-      <mesh position={[0, -0.35, -1.65]} castShadow receiveShadow material={sharedMaterials.chrome}>
+      <mesh position={[0, -0.35 - damage * 0.1, -1.65]} rotation={[-damage * 0.4, -damage * 0.1, 0]} castShadow receiveShadow material={sharedMaterials.chrome}>
         <boxGeometry args={[1.4, 0.08, 0.1]} />
       </mesh>
       {/* Taillights */}
       <BrakeLight position={[0.5, -0.15, -1.61]} args={[0.15, 0.2, 0.05]} />
       <BrakeLight position={[-0.5, -0.15, -1.61]} args={[0.15, 0.2, 0.05]} />
+      {/* Scratches */}
+      {damage > 0.3 && (
+        <mesh position={[0.76, -0.1, 0]} rotation={[0, Math.PI / 2, 0]} castShadow receiveShadow>
+          <planeGeometry args={[1.5, 0.2]} />
+          <meshStandardMaterial color="#222" roughness={0.9} transparent opacity={damage * 0.8} depthWrite={false} />
+        </mesh>
+      )}
     </>
   );
 }
-export function Volvo140() {
+export function Volvo140({ damage = 0 }: { damage?: number }) {
   return (
     <>
       {/* Lower Body */}
-      <mesh position={[0, -0.25, 0]} castShadow receiveShadow material={sharedMaterials.volvoBody}>
+      <mesh position={[0, -0.25, 0]} scale={[1, 1, 1 - damage * 0.1]} castShadow receiveShadow material={sharedMaterials.volvoBody}>
         <boxGeometry args={[1.7, 0.5, 4]} />
       </mesh>
       {/* Black Trim Line */}
@@ -159,14 +173,14 @@ export function Volvo140() {
         <meshStandardMaterial color="#111" />
       </mesh>
       {/* Headlights */}
-      <HeadLight position={[0.6, -0.15, 2.01]} args={[0.25, 0.25, 0.1]} />
-      <HeadLight position={[-0.6, -0.15, 2.01]} args={[0.25, 0.25, 0.1]} />
+      {damage < 0.6 && <HeadLight position={[0.6, -0.15, 2.01]} args={[0.25, 0.25, 0.1]} />}
+      {damage < 0.9 && <HeadLight position={[-0.6, -0.15, 2.01]} args={[0.25, 0.25, 0.1]} />}
       {/* Bumpers */}
-      <mesh position={[0, -0.4, 2.05]} castShadow receiveShadow>
+      <mesh position={[0, -0.4 - damage * 0.1, 2.05]} rotation={[damage * 0.4, damage * 0.1, 0]} castShadow receiveShadow>
         <boxGeometry args={[1.8, 0.15, 0.2]} />
         <meshStandardMaterial color="#ccc" metalness={0.8} roughness={0.2} />
       </mesh>
-      <mesh position={[0, -0.4, -2.05]} castShadow receiveShadow>
+      <mesh position={[0, -0.4 - damage * 0.1, -2.05]} rotation={[-damage * 0.4, -damage * 0.1, 0]} castShadow receiveShadow>
         <boxGeometry args={[1.8, 0.15, 0.2]} />
         <meshStandardMaterial color="#ccc" metalness={0.8} roughness={0.2} />
       </mesh>
@@ -214,15 +228,22 @@ export function Volvo140() {
         <boxGeometry args={[0.05, 0.05, 0.2]} />
         <meshStandardMaterial color="#111" />
       </mesh>
+      {/* Scratches */}
+      {damage > 0.3 && (
+        <mesh position={[0.86, -0.1, 0]} rotation={[0, Math.PI / 2, 0]} castShadow receiveShadow>
+          <planeGeometry args={[2, 0.2]} />
+          <meshStandardMaterial color="#222" roughness={0.9} transparent opacity={damage * 0.8} depthWrite={false} />
+        </mesh>
+      )}
     </>
   );
 }
 
-export function SportsCar80s() {
+export function SportsCar80s({ damage = 0 }: { damage?: number }) {
   return (
     <>
       {/* Main Body (Wedge) */}
-      <mesh position={[0, -0.2, 0.1]} castShadow receiveShadow>
+      <mesh position={[0, -0.2, 0.1]} scale={[1, 1, 1 - damage * 0.1]} castShadow receiveShadow>
         <boxGeometry args={[1.8, 0.3, 4.2]} />
         <meshStandardMaterial color="#f8fafc" />
       </mesh>
@@ -237,16 +258,17 @@ export function SportsCar80s() {
         <meshStandardMaterial color="#111" />
       </mesh>
       {/* Pop-up Headlights */}
-      <mesh position={[0.6, -0.05, 2.0]} castShadow receiveShadow>
+      {/* Pop-up Headlights */}
+      {damage < 0.6 && <mesh position={[0.6, -0.05, 2.0]} castShadow receiveShadow>
         <boxGeometry args={[0.3, 0.1, 0.2]} />
         <meshStandardMaterial color="#f8fafc" />
-      </mesh>
-      <mesh position={[-0.6, -0.05, 2.0]} castShadow receiveShadow>
+      </mesh>}
+      {damage < 0.9 && <mesh position={[-0.6, -0.05, 2.0]} castShadow receiveShadow>
         <boxGeometry args={[0.3, 0.1, 0.2]} />
         <meshStandardMaterial color="#f8fafc" />
-      </mesh>
-      <HeadLight position={[0.6, -0.05, 2.11]} args={[0.25, 0.05, 0.05]} />
-      <HeadLight position={[-0.6, -0.05, 2.11]} args={[0.25, 0.05, 0.05]} />
+      </mesh>}
+      {damage < 0.6 && <HeadLight position={[0.6, -0.05, 2.11]} args={[0.25, 0.05, 0.05]} />}
+      {damage < 0.9 && <HeadLight position={[-0.6, -0.05, 2.11]} args={[0.25, 0.05, 0.05]} />}
       {/* Spoiler */}
       <mesh position={[0, 0.2, -1.9]} castShadow receiveShadow>
         <boxGeometry args={[1.7, 0.05, 0.4]} />
@@ -271,15 +293,22 @@ export function SportsCar80s() {
         <cylinderGeometry args={[0.06, 0.06, 0.2, 16]} />
         <meshStandardMaterial color="#333" metalness={0.9} roughness={0.2} />
       </mesh>
+      {/* Scratches */}
+      {damage > 0.3 && (
+        <mesh position={[0.91, -0.1, 0]} rotation={[0, Math.PI / 2, 0]} castShadow receiveShadow>
+          <planeGeometry args={[2, 0.2]} />
+          <meshStandardMaterial color="#222" roughness={0.9} transparent opacity={damage * 0.8} depthWrite={false} />
+        </mesh>
+      )}
     </>
   );
 }
 
-export function MuscleCar60s() {
+export function MuscleCar60s({ damage = 0 }: { damage?: number }) {
   return (
     <>
       {/* Main Body */}
-      <mesh position={[0, -0.15, 0]} castShadow receiveShadow>
+      <mesh position={[0, -0.15, 0]} scale={[1, 1, 1 - damage * 0.1]} castShadow receiveShadow>
         <boxGeometry args={[1.75, 0.45, 4.4]} />
         <meshStandardMaterial color="#ef4444" />
       </mesh>
@@ -313,29 +342,36 @@ export function MuscleCar60s() {
         <meshStandardMaterial color="#111" />
       </mesh>
       {/* Headlights (Round) */}
-      <HeadLight position={[0.6, -0.15, 2.22]} rotation={[Math.PI / 2, 0, 0]} args={[0.1, 0.1, 0.1, 16]} geometry="cylinderGeometry" />
-      <HeadLight position={[-0.6, -0.15, 2.22]} rotation={[Math.PI / 2, 0, 0]} args={[0.1, 0.1, 0.1, 16]} geometry="cylinderGeometry" />
+      {damage < 0.6 && <HeadLight position={[0.6, -0.15, 2.22]} rotation={[Math.PI / 2, 0, 0]} args={[0.1, 0.1, 0.1, 16]} geometry="cylinderGeometry" />}
+      {damage < 0.9 && <HeadLight position={[-0.6, -0.15, 2.22]} rotation={[Math.PI / 2, 0, 0]} args={[0.1, 0.1, 0.1, 16]} geometry="cylinderGeometry" />}
       {/* Bumpers */}
-      <mesh position={[0, -0.35, 2.25]} castShadow receiveShadow>
+      <mesh position={[0, -0.35 - damage * 0.1, 2.25]} rotation={[damage * 0.4, damage * 0.1, 0]} castShadow receiveShadow>
         <boxGeometry args={[1.8, 0.15, 0.2]} />
         <meshStandardMaterial color="#ccc" metalness={0.9} roughness={0.1} />
       </mesh>
-      <mesh position={[0, -0.35, -2.25]} castShadow receiveShadow>
+      <mesh position={[0, -0.35 - damage * 0.1, -2.25]} rotation={[-damage * 0.4, -damage * 0.1, 0]} castShadow receiveShadow>
         <boxGeometry args={[1.8, 0.15, 0.2]} />
         <meshStandardMaterial color="#ccc" metalness={0.9} roughness={0.1} />
       </mesh>
       {/* Taillights */}
       <BrakeLight position={[0.6, -0.15, -2.21]} args={[0.4, 0.15, 0.1]} />
       <BrakeLight position={[-0.6, -0.15, -2.21]} args={[0.4, 0.15, 0.1]} />
+      {/* Scratches */}
+      {damage > 0.3 && (
+        <mesh position={[0.88, -0.1, 0]} rotation={[0, Math.PI / 2, 0]} castShadow receiveShadow>
+          <planeGeometry args={[2, 0.2]} />
+          <meshStandardMaterial color="#222" roughness={0.9} transparent opacity={damage * 0.8} depthWrite={false} />
+        </mesh>
+      )}
     </>
   );
 }
 
-export function CyberpunkCar() {
+export function CyberpunkCar({ damage = 0 }: { damage?: number }) {
   return (
     <>
       {/* Main Body (Wedge Shape) */}
-      <mesh position={[0, -0.1, 0]} castShadow receiveShadow material={sharedMaterials.cyberBody}>
+      <mesh position={[0, -0.1, 0]} scale={[1, 1, 1 - damage * 0.1]} castShadow receiveShadow material={sharedMaterials.cyberBody}>
         <boxGeometry args={[1.9, 0.4, 4.6]} />
       </mesh>
       {/* Cabin (Low Profile) */}
@@ -351,7 +387,7 @@ export function CyberpunkCar() {
         <boxGeometry args={[1.95, 0.05, 4.65]} />
       </mesh>
       {/* Front Lightbar */}
-      <HeadLight position={[0, -0.1, 2.31]} args={[1.8, 0.05, 0.05]} />
+      {damage < 0.8 && <HeadLight position={[0, -0.1, 2.31]} args={[1.8, 0.05, 0.05]} />}
       {/* Rear Lightbar */}
       <BrakeLight position={[0, 0.1, -2.31]} args={[1.8, 0.05, 0.05]} />
       {/* Exhaust (Dual Large) */}
@@ -363,15 +399,22 @@ export function CyberpunkCar() {
         <cylinderGeometry args={[0.15, 0.15, 0.2, 16]} />
         <meshStandardMaterial color="#111" metalness={0.9} roughness={0.2} />
       </mesh>
+      {/* Scratches */}
+      {damage > 0.3 && (
+        <mesh position={[0.96, -0.1, 0]} rotation={[0, Math.PI / 2, 0]} castShadow receiveShadow>
+          <planeGeometry args={[2, 0.2]} />
+          <meshStandardMaterial color="#222" roughness={0.9} transparent opacity={damage * 0.8} depthWrite={false} />
+        </mesh>
+      )}
     </>
   );
 }
 
-export function PickupTruck() {
+export function PickupTruck({ damage = 0 }: { damage?: number }) {
   return (
     <>
       {/* Main Body (Front/Cab) */}
-      <mesh position={[0, -0.1, 0.5]} castShadow receiveShadow material={sharedMaterials.truckBody}>
+      <mesh position={[0, -0.1, 0.5]} scale={[1, 1, 1 - damage * 0.1]} castShadow receiveShadow material={sharedMaterials.truckBody}>
         <boxGeometry args={[2.1, 0.6, 2.5]} />
       </mesh>
       {/* Truck Bed */}
@@ -395,42 +438,49 @@ export function PickupTruck() {
         <boxGeometry args={[1.8, 0.5, 0.1]} />
       </mesh>
       {/* Headlights (Square) */}
-      <HeadLight position={[0.7, -0.1, 1.77]} args={[0.3, 0.3, 0.1]} />
-      <HeadLight position={[-0.7, -0.1, 1.77]} args={[0.3, 0.3, 0.1]} />
+      {damage < 0.6 && <HeadLight position={[0.7, -0.1, 1.77]} args={[0.3, 0.3, 0.1]} />}
+      {damage < 0.9 && <HeadLight position={[-0.7, -0.1, 1.77]} args={[0.3, 0.3, 0.1]} />}
       {/* Bumpers (Heavy Duty) */}
-      <mesh position={[0, -0.4, 1.8]} castShadow receiveShadow material={sharedMaterials.rubber}>
+      <mesh position={[0, -0.4 - damage * 0.1, 1.8]} rotation={[damage * 0.4, damage * 0.1, 0]} castShadow receiveShadow material={sharedMaterials.rubber}>
         <boxGeometry args={[2.2, 0.2, 0.2]} />
       </mesh>
-      <mesh position={[0, -0.4, -2.8]} castShadow receiveShadow material={sharedMaterials.rubber}>
+      <mesh position={[0, -0.4 - damage * 0.1, -2.8]} rotation={[-damage * 0.4, -damage * 0.1, 0]} castShadow receiveShadow material={sharedMaterials.rubber}>
         <boxGeometry args={[2.2, 0.2, 0.2]} />
       </mesh>
       {/* Taillights */}
       <BrakeLight position={[0.9, -0.1, -2.76]} args={[0.2, 0.3, 0.1]} />
       <BrakeLight position={[-0.9, -0.1, -2.76]} args={[0.2, 0.3, 0.1]} />
+      {/* Scratches */}
+      {damage > 0.3 && (
+        <mesh position={[1.06, -0.1, 0]} rotation={[0, Math.PI / 2, 0]} castShadow receiveShadow>
+          <planeGeometry args={[2, 0.2]} />
+          <meshStandardMaterial color="#222" roughness={0.9} transparent opacity={damage * 0.8} depthWrite={false} />
+        </mesh>
+      )}
     </>
   );
 }
 
-export function Formula1() {
+export function Formula1({ damage = 0 }: { damage?: number }) {
   return (
     <>
       {/* Main Body (Narrow) */}
-      <mesh position={[0, -0.2, 0]} castShadow receiveShadow material={sharedMaterials.f1Body}>
+      <mesh position={[0, -0.2, 0]} scale={[1, 1, 1 - damage * 0.1]} castShadow receiveShadow material={sharedMaterials.f1Body}>
         <boxGeometry args={[0.8, 0.3, 4.8]} />
       </mesh>
       {/* Front Wing */}
-      <mesh position={[0, -0.3, 2.2]} castShadow receiveShadow material={sharedMaterials.f1Body}>
+      <mesh position={[0, -0.3 - damage * 0.1, 2.2]} rotation={[damage * 0.4, damage * 0.1, 0]} castShadow receiveShadow material={sharedMaterials.f1Body}>
         <boxGeometry args={[2.0, 0.1, 0.6]} />
       </mesh>
       {/* Rear Wing */}
-      <mesh position={[0, 0.3, -2.2]} castShadow receiveShadow material={sharedMaterials.f1Body}>
+      <mesh position={[0, 0.3 - damage * 0.1, -2.2]} rotation={[-damage * 0.4, -damage * 0.1, 0]} castShadow receiveShadow material={sharedMaterials.f1Body}>
         <boxGeometry args={[1.8, 0.1, 0.5]} />
       </mesh>
       {/* Rear Wing Supports */}
-      <mesh position={[0.4, 0.05, -2.2]} castShadow receiveShadow material={sharedMaterials.f1Body}>
+      <mesh position={[0.4, 0.05 - damage * 0.1, -2.2]} rotation={[-damage * 0.4, -damage * 0.1, 0]} castShadow receiveShadow material={sharedMaterials.f1Body}>
         <boxGeometry args={[0.05, 0.5, 0.4]} />
       </mesh>
-      <mesh position={[-0.4, 0.05, -2.2]} castShadow receiveShadow material={sharedMaterials.f1Body}>
+      <mesh position={[-0.4, 0.05 - damage * 0.1, -2.2]} rotation={[-damage * 0.4, -damage * 0.1, 0]} castShadow receiveShadow material={sharedMaterials.f1Body}>
         <boxGeometry args={[0.05, 0.5, 0.4]} />
       </mesh>
       {/* Cockpit / Driver Area */}
@@ -455,6 +505,13 @@ export function Formula1() {
       </mesh>
       {/* Tiny Taillight (Rain Light) */}
       <BrakeLight position={[0, -0.2, -2.41]} args={[0.1, 0.1, 0.05]} />
+      {/* Scratches */}
+      {damage > 0.3 && (
+        <mesh position={[0.41, -0.2, 0]} rotation={[0, Math.PI / 2, 0]} castShadow receiveShadow>
+          <planeGeometry args={[2, 0.2]} />
+          <meshStandardMaterial color="#222" roughness={0.9} transparent opacity={damage * 0.8} depthWrite={false} />
+        </mesh>
+      )}
     </>
   );
 }

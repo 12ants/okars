@@ -830,6 +830,106 @@ export function InstancedStreetLights({ streetlights }: any) {
   );
 }
 
+export function InstancedBenches({ benches }: any) {
+  const seatRef = useRef<InstancedMesh>(null);
+  const legRef = useRef<InstancedMesh>(null);
+
+  useBox(index => {
+    if (!benches[index]) return { type: 'Static', position: [0, -1000, 0], args: [1, 1, 1] };
+    return {
+      type: 'Static',
+      position: [benches[index].position[0], benches[index].position[1] + 0.25, benches[index].position[2]],
+      rotation: benches[index].rotation,
+      args: [2, 0.5, 0.6]
+    };
+  });
+
+  useEffect(() => {
+    if (!seatRef.current || !legRef.current) return;
+    const parentDummy = new Object3D();
+    
+    benches.forEach((bench: any, i: number) => {
+      parentDummy.position.set(...bench.position as [number, number, number]);
+      parentDummy.rotation.set(...bench.rotation as [number, number, number]);
+      parentDummy.updateMatrixWorld();
+      
+      const seatDummy = new Object3D();
+      seatDummy.position.set(0, 0.5, 0);
+      parentDummy.add(seatDummy);
+      seatDummy.updateMatrixWorld();
+      seatRef.current!.setMatrixAt(i, seatDummy.matrixWorld);
+      parentDummy.remove(seatDummy);
+
+      const legDummy1 = new Object3D();
+      legDummy1.position.set(-0.8, 0.25, 0);
+      parentDummy.add(legDummy1);
+      legDummy1.updateMatrixWorld();
+      legRef.current!.setMatrixAt(i * 2, legDummy1.matrixWorld);
+      parentDummy.remove(legDummy1);
+
+      const legDummy2 = new Object3D();
+      legDummy2.position.set(0.8, 0.25, 0);
+      parentDummy.add(legDummy2);
+      legDummy2.updateMatrixWorld();
+      legRef.current!.setMatrixAt(i * 2 + 1, legDummy2.matrixWorld);
+      parentDummy.remove(legDummy2);
+    });
+    
+    seatRef.current.instanceMatrix.needsUpdate = true;
+    legRef.current.instanceMatrix.needsUpdate = true;
+  }, [benches]);
+
+  if (benches.length === 0) return null;
+
+  return (
+    <group>
+      <instancedMesh ref={seatRef} args={[undefined, undefined, benches.length]} castShadow receiveShadow frustumCulled>
+        <boxGeometry args={[2, 0.1, 0.6]} />
+        <meshStandardMaterial color="#8B4513" roughness={0.8} />
+      </instancedMesh>
+      <instancedMesh ref={legRef} args={[undefined, undefined, benches.length * 2]} castShadow receiveShadow frustumCulled>
+        <boxGeometry args={[0.1, 0.5, 0.6]} />
+        <meshStandardMaterial color="#3f3f46" roughness={0.6} />
+      </instancedMesh>
+    </group>
+  );
+}
+
+export function InstancedTrashCans({ trashCans }: any) {
+  const ref = useRef<InstancedMesh>(null);
+
+  useCylinder(index => {
+    if (!trashCans[index]) return { type: 'Static', position: [0, -1000, 0], args: [0.3, 0.3, 1, 16] };
+    return {
+      type: 'Static',
+      position: trashCans[index].position,
+      rotation: trashCans[index].rotation,
+      args: [0.3, 0.3, 1, 16]
+    };
+  });
+
+  useEffect(() => {
+    if (!ref.current) return;
+    const dummy = new Object3D();
+    trashCans.forEach((can: any, i: number) => {
+      dummy.position.set(...can.position as [number, number, number]);
+      dummy.rotation.set(...can.rotation as [number, number, number]);
+      dummy.updateMatrix();
+      ref.current!.setMatrixAt(i, dummy.matrix);
+    });
+    ref.current.instanceMatrix.needsUpdate = true;
+  }, [trashCans]);
+
+  if (trashCans.length === 0) return null;
+
+  return (
+    <instancedMesh ref={ref} args={[undefined, undefined, trashCans.length]} castShadow receiveShadow frustumCulled>
+      <cylinderGeometry args={[0.3, 0.3, 1, 16]} />
+      <meshStandardMaterial color="#3f3f46" roughness={0.7} metalness={0.5} />
+    </instancedMesh>
+  );
+}
+
 export function InstancedBuildings({ buildings }: any) {
   const ref = useRef<InstancedMesh>(null);
 
@@ -936,7 +1036,7 @@ export function FieldEnvironment({
   worldHeight = 1,
   worldRoughness = 1
 }: any) {
-  const { trees, pineTrees, deadTrees, grass, bushes, hills, rocks, signs, flags, roads, streetlights, bridges, tunnels, buildings, billboards } = useMemo(() => {
+  const { trees, pineTrees, deadTrees, grass, bushes, rocks, signs, flags, roads, streetlights, bridges, tunnels, buildings, billboards } = useMemo(() => {
     const trees: any[] = [];
     const pineTrees: any[] = [];
     const deadTrees: any[] = [];
@@ -947,6 +1047,8 @@ export function FieldEnvironment({
     const flags: any[] = [];
     const roads: any[] = [];
     const streetlights: any[] = [];
+    const benches: any[] = [];
+    const trashCans: any[] = [];
     const bridges: any[] = [];
     const tunnels: any[] = [];
     const buildings: any[] = [];
@@ -1053,6 +1155,28 @@ export function FieldEnvironment({
               rotation: [0, angleY + Math.PI / 2, 0]
             });
           }
+
+          if (random() > 0.92) {
+            benches.push({
+              position: [midX + Math.cos(angleY) * 12, midY, midZ - Math.sin(angleY) * 12],
+              rotation: [0, angleY, 0]
+            });
+          }
+
+          if (random() > 0.94) {
+            trashCans.push({
+              position: [midX - Math.cos(angleY) * 12, midY + 0.5, midZ + Math.sin(angleY) * 12],
+              rotation: [0, 0, 0]
+            });
+          }
+
+          if (random() > 0.9) {
+            signs.push({
+              position: [midX - Math.cos(angleY) * 12, midY, midZ + Math.sin(angleY) * 12],
+              rotation: [0, angleY - Math.PI / 2, 0],
+              text: ["DANGER", "SLOW", "TURN", "BUMP", "YIELD"][Math.floor(random() * 5)]
+            });
+          }
           
           if (random() > 0.95) {
             billboards.push({
@@ -1097,6 +1221,28 @@ export function FieldEnvironment({
             streetlights.push({
               position: [sx, sy, sz],
               rotation: [0, isVertical ? Math.PI : Math.PI / 2, 0]
+            });
+          }
+
+          // Benches
+          if (Math.abs(i) % 60 === 0 && random() > 0.4) {
+            const sx = isVertical ? x + 12 : x;
+            const sz = isVertical ? z : z + 12;
+            const sy = terrainGenerator.getCarvedHeight(sx, sz, roadSegments);
+            benches.push({
+              position: [sx, sy, sz],
+              rotation: [0, isVertical ? Math.PI / 2 : 0, 0]
+            });
+          }
+
+          // Trash Cans
+          if (Math.abs(i) % 80 === 0 && random() > 0.5) {
+            const sx = isVertical ? x - 12 : x;
+            const sz = isVertical ? z : z - 12;
+            const sy = terrainGenerator.getCarvedHeight(sx, sz, roadSegments);
+            trashCans.push({
+              position: [sx, sy + 0.5, sz],
+              rotation: [0, 0, 0]
             });
           }
 

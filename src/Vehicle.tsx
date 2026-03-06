@@ -1,9 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useBox, useRaycastVehicle } from '@react-three/cannon';
 import { useControls } from './useControls';
 import { Wheel } from './Wheel';
-import { Group, Mesh, Vector3, Quaternion } from 'three';
+import { Group, Mesh, Vector3, Quaternion, Euler } from 'three';
 import { debugData } from './store';
 import { Volvo140, SportsCar80s, MuscleCar60s, SovietClassic, EuroCompact, CyberpunkCar, PickupTruck, Formula1 } from './CarModels';
 import { spawnSmoke, spawnSpark, spawnSkidMark, spawnWind, spawnBoostFlame } from './Effects';
@@ -23,6 +23,7 @@ export function Vehicle({
   carType = 'volvo',
   cameraMode = 'third-person',
   cameraDistance = 10,
+  cameraSensitivity = 1,
   steeringType = 'buttons',
   isActive = true,
   onExitVehicle,
@@ -40,6 +41,9 @@ export function Vehicle({
   ...props
 }: any) {
   const chassisRef = useRef<Group>(null);
+  const damageRef = useRef(0);
+  const [visualDamage, setVisualDamage] = useState(0);
+
   const [chassisBody, chassisApi] = useBox(
     () => ({
       mass: mass,
@@ -56,6 +60,12 @@ export function Vehicle({
               new Vector3(...e.contact.contactNormal).multiplyScalar(e.contact.impactVelocity)
             );
           }
+          const damageIncrease = e.contact.impactVelocity * 0.05;
+          const newDamage = Math.min(damageRef.current + damageIncrease, 1);
+          if (Math.floor(newDamage * 10) > Math.floor(damageRef.current * 10)) {
+            setVisualDamage(newDamage);
+          }
+          damageRef.current = newDamage;
         }
       },
       ...props,
@@ -119,6 +129,36 @@ export function Vehicle({
       unsubAng();
     };
   }, [chassisApi]);
+
+  const cameraAngleX = useRef(0);
+  const cameraAngleY = useRef(0);
+  const isDragging = useRef(false);
+
+  useEffect(() => {
+    const onMouseDown = (e: MouseEvent) => {
+      // Don't drag if clicking UI
+      if ((e.target as HTMLElement).tagName === 'BUTTON' || (e.target as HTMLElement).tagName === 'INPUT') return;
+      isDragging.current = true;
+    };
+    const onMouseUp = () => {
+      isDragging.current = false;
+    };
+    const onMouseMove = (e: MouseEvent) => {
+      if (isDragging.current) {
+        cameraAngleX.current += e.movementX * 0.005 * cameraSensitivity;
+        cameraAngleY.current += e.movementY * 0.005 * cameraSensitivity;
+        cameraAngleY.current = Math.max(-Math.PI / 4, Math.min(Math.PI / 4, cameraAngleY.current));
+      }
+    };
+    window.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mouseup', onMouseUp);
+    window.addEventListener('mousemove', onMouseMove);
+    return () => {
+      window.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mouseup', onMouseUp);
+      window.removeEventListener('mousemove', onMouseMove);
+    };
+  }, []);
 
   useFrame((state, delta) => {
     const { forward, backward, left, right, brake, reset, interact, sprint } = controls;
@@ -251,11 +291,30 @@ export function Vehicle({
       return;
     }
 
-    if (chassisRef.current) {
-      _wDir.set(0, 0, 1).applyQuaternion(_quaternion).normalize();
+    if (damageRef.current > 0.5 && Math.random() < damageRef.current * 0.1) {
+      _offset.set(0, 0.5, 1.5).applyQuaternion(_quaternion);
+      _lookAtPos.copy(_position).add(_offset);
+      spawnSmoke(_lookAtPos, _velocity);
+    }
+    
+    if (damageRef.current > 0.8 && Math.random() < damageRef.current * 0.2) {
+      _offset.set(0, 0.5, 1.5).applyQuaternion(_quaternion);
+      _lookAtPos.copy(_position).add(_offset);
+      spawnBoostFlame(_lookAtPos, _velocity, _quaternion);
+    }
 
+    if (!isDragging.current) {
+      cameraAngleX.current *= 0.95;
+      cameraAngleY.current *= 0.95;
+    }
+
+    if (chassisRef.current) {
       if (cameraMode === 'third-person') {
         const height = cameraDistance * 0.5;
+        
+        const euler = new Euler(cameraAngleY.current, cameraAngleX.current, 0, 'YXZ');
+        _wDir.set(0, 0, 1).applyEuler(euler).applyQuaternion(_quaternion).normalize();
+
         _cameraPosition.copy(_wDir).multiplyScalar(-cameraDistance);
         _cameraPosition.add(_position);
         _cameraPosition.y += height;
@@ -268,7 +327,10 @@ export function Vehicle({
         _cameraPosition.copy(_position).add(_offset);
         state.camera.position.copy(_cameraPosition);
         
-        // Look forward
+        // Look forward with offset
+        const euler = new Euler(cameraAngleY.current, cameraAngleX.current, 0, 'YXZ');
+        _wDir.set(0, 0, 1).applyEuler(euler).applyQuaternion(_quaternion).normalize();
+
         _lookAtPos.copy(_wDir).multiplyScalar(10).add(_cameraPosition);
         state.camera.lookAt(_lookAtPos);
       }
@@ -278,14 +340,14 @@ export function Vehicle({
   return (
     <group ref={vehicle}>
       <group ref={chassisRef}>
-        {carType === 'volvo' && <Volvo140 />}
-        {carType === 'sports' && <SportsCar80s />}
-        {carType === 'muscle' && <MuscleCar60s />}
-        {carType === 'soviet' && <SovietClassic />}
-        {carType === 'euro' && <EuroCompact />}
-        {carType === 'cyber' && <CyberpunkCar />}
-        {carType === 'truck' && <PickupTruck />}
-        {carType === 'f1' && <Formula1 />}
+        {carType === 'volvo' && <Volvo140 damage={visualDamage} />}
+        {carType === 'sports' && <SportsCar80s damage={visualDamage} />}
+        {carType === 'muscle' && <MuscleCar60s damage={visualDamage} />}
+        {carType === 'soviet' && <SovietClassic damage={visualDamage} />}
+        {carType === 'euro' && <EuroCompact damage={visualDamage} />}
+        {carType === 'cyber' && <CyberpunkCar damage={visualDamage} />}
+        {carType === 'truck' && <PickupTruck damage={visualDamage} />}
+        {carType === 'f1' && <Formula1 damage={visualDamage} />}
       </group>
       <Wheel ref={wheel1} radius={radius} leftSide />
       <Wheel ref={wheel2} radius={radius} />

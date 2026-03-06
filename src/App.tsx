@@ -83,6 +83,7 @@ export default function App() {
         carType={carType} 
         cameraMode={cameraMode} 
         cameraDistance={cameraDistance} 
+        cameraSensitivity={cameraSensitivity}
         steeringType={steeringType}
         position={[0, Math.max(10, waterLevel + 5), 0]} 
         rotation={[0, -Math.PI / 2, 0]} 
@@ -189,7 +190,7 @@ export default function App() {
             
             <DayNightCycle enableShadows={enableShadows} graphicsQuality={graphicsQuality} />
             
-            <Physics broadphase="SAP" gravity={[0, -9.81, 0]} allowSleep step={1/60} iterations={10}>
+            <Physics broadphase="SAP" gravity={[0, -9.81, 0]} allowSleep>
               {isDebug ? <Debug>{sceneContents}</Debug> : sceneContents}
             </Physics>
             {enableParticles && <Effects />}
