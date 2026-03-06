@@ -1,0 +1,15 @@
+export const debugData = {
+  speed: 0,
+  position: [0, 0, 0],
+  rotation: [0, 0, 0],
+  velocity: [0, 0, 0],
+  angularVelocity: [0, 0, 0],
+  engineForce: 0,
+  steering: 0,
+  fps: 0,
+  cameraMode: 'third-person',
+  isBraking: false,
+  joystickSteering: 0,
+  boostFuel: 100,
+  isBoosting: false,
+};

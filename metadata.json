@@ -1,0 +1,5 @@
+{
+  "name": "okars",
+  "description": "A simple 3D car game template using React Three Fiber and Cannon physics.",
+  "requestFramePermissions": []
+}
