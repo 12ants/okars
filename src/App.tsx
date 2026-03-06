@@ -178,9 +178,9 @@ export default function App() {
         <Canvas 
           shadows={enableShadows} 
           dpr={graphicsQuality === 'high' ? [1, 2] : graphicsQuality === 'medium' ? [1, 1.5] : [1, 1]} 
-          performance={{ min: 0.5 }} 
+          performance={{ min: 0.5, max: 1 }} 
           camera={{ position: [0, 2, 15], fov: 75 }}
-          gl={{ antialias: graphicsQuality !== 'low', powerPreference: "high-performance" }}
+          gl={{ antialias: graphicsQuality !== 'low', powerPreference: "high-performance", stencil: false, depth: true }}
         >
           <Bvh firstHitOnly>
             <AdaptiveDpr pixelated />
@@ -189,7 +189,7 @@ export default function App() {
             
             <DayNightCycle enableShadows={enableShadows} graphicsQuality={graphicsQuality} />
             
-            <Physics broadphase="SAP" gravity={[0, -9.81, 0]} allowSleep>
+            <Physics broadphase="SAP" gravity={[0, -9.81, 0]} allowSleep step={1/60} iterations={10}>
               {isDebug ? <Debug>{sceneContents}</Debug> : sceneContents}
             </Physics>
             {enableParticles && <Effects />}

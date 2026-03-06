@@ -388,11 +388,11 @@ export function InstancedTrees({ trees, biome = 'forest' }: any) {
 
   return (
     <group>
-      <instancedMesh ref={trunkRef} args={[undefined, undefined, trees.length]} castShadow receiveShadow>
+      <instancedMesh ref={trunkRef} args={[undefined, undefined, trees.length]} castShadow receiveShadow frustumCulled>
         <cylinderGeometry args={[0.2, 0.2, 2, 8]} />
         <meshStandardMaterial color={trunkColor} />
       </instancedMesh>
-      <instancedMesh ref={leavesRef} args={[undefined, undefined, trees.length]} castShadow receiveShadow>
+      <instancedMesh ref={leavesRef} args={[undefined, undefined, trees.length]} castShadow receiveShadow frustumCulled>
         <sphereGeometry args={[1.5, 12, 12]} />
         <meshStandardMaterial color={leafColor} roughness={0.8} />
       </instancedMesh>
@@ -439,11 +439,11 @@ export function InstancedPineTrees({ trees, biome = 'forest' }: any) {
 
   return (
     <group>
-      <instancedMesh ref={trunkRef} args={[undefined, undefined, trees.length]} castShadow receiveShadow>
+      <instancedMesh ref={trunkRef} args={[undefined, undefined, trees.length]} castShadow receiveShadow frustumCulled>
         <cylinderGeometry args={[0.2, 0.2, 2, 8]} />
         <meshStandardMaterial color={trunkColor} />
       </instancedMesh>
-      <instancedMesh ref={leavesRef} args={[undefined, undefined, trees.length]} castShadow receiveShadow>
+      <instancedMesh ref={leavesRef} args={[undefined, undefined, trees.length]} castShadow receiveShadow frustumCulled>
         <coneGeometry args={[1.5, 4, 8]} />
         <meshStandardMaterial color={leafColor} roughness={0.9} />
       </instancedMesh>
@@ -499,15 +499,15 @@ export function InstancedDeadTrees({ trees, biome = 'forest' }: any) {
 
   return (
     <group>
-      <instancedMesh ref={trunkRef} args={[undefined, undefined, trees.length]} castShadow receiveShadow>
+      <instancedMesh ref={trunkRef} args={[undefined, undefined, trees.length]} castShadow receiveShadow frustumCulled>
         <cylinderGeometry args={[0.1, 0.2, 3, 8]} />
         <meshStandardMaterial color={trunkColor} roughness={1} />
       </instancedMesh>
-      <instancedMesh ref={branchRef1} args={[undefined, undefined, trees.length]} castShadow receiveShadow>
+      <instancedMesh ref={branchRef1} args={[undefined, undefined, trees.length]} castShadow receiveShadow frustumCulled>
         <cylinderGeometry args={[0.05, 0.1, 1.5, 8]} />
         <meshStandardMaterial color={trunkColor} roughness={1} />
       </instancedMesh>
-      <instancedMesh ref={branchRef2} args={[undefined, undefined, trees.length]} castShadow receiveShadow>
+      <instancedMesh ref={branchRef2} args={[undefined, undefined, trees.length]} castShadow receiveShadow frustumCulled>
         <cylinderGeometry args={[0.05, 0.08, 1, 8]} />
         <meshStandardMaterial color={trunkColor} roughness={1} />
       </instancedMesh>
@@ -546,11 +546,11 @@ export function InstancedGrass({ grass, biome = 'forest' }: any) {
 
   return (
     <group>
-      <instancedMesh ref={ref1} args={[undefined, undefined, grass.length]} receiveShadow>
+      <instancedMesh ref={ref1} args={[undefined, undefined, grass.length]} frustumCulled>
         <planeGeometry args={[0.5, 0.5]} />
         <meshStandardMaterial color={color} side={2} alphaTest={0.5} roughness={1} />
       </instancedMesh>
-      <instancedMesh ref={ref2} args={[undefined, undefined, grass.length]} receiveShadow>
+      <instancedMesh ref={ref2} args={[undefined, undefined, grass.length]} frustumCulled>
         <planeGeometry args={[0.5, 0.5]} />
         <meshStandardMaterial color={color} side={2} alphaTest={0.5} roughness={1} />
       </instancedMesh>
@@ -595,16 +595,16 @@ export function InstancedBushes({ bushes, biome = 'forest' }: any) {
 
   return (
     <group>
-      <instancedMesh ref={ref1} args={[undefined, undefined, bushes.length]} castShadow receiveShadow>
-        <sphereGeometry args={[0.8, 12, 12]} />
+      <instancedMesh ref={ref1} args={[undefined, undefined, bushes.length]} frustumCulled>
+        <sphereGeometry args={[0.8, 8, 8]} />
         <meshStandardMaterial color={color} roughness={0.9} />
       </instancedMesh>
-      <instancedMesh ref={ref2} args={[undefined, undefined, bushes.length]} castShadow receiveShadow>
-        <sphereGeometry args={[0.6, 12, 12]} />
+      <instancedMesh ref={ref2} args={[undefined, undefined, bushes.length]} frustumCulled>
+        <sphereGeometry args={[0.6, 8, 8]} />
         <meshStandardMaterial color={color} roughness={0.9} />
       </instancedMesh>
-      <instancedMesh ref={ref3} args={[undefined, undefined, bushes.length]} castShadow receiveShadow>
-        <sphereGeometry args={[0.5, 12, 12]} />
+      <instancedMesh ref={ref3} args={[undefined, undefined, bushes.length]} frustumCulled>
+        <sphereGeometry args={[0.5, 8, 8]} />
         <meshStandardMaterial color={color} roughness={0.9} />
       </instancedMesh>
     </group>
@@ -643,7 +643,7 @@ export function InstancedRocks({ rocks, biome = 'forest' }: any) {
   if (rocks.length === 0) return null;
 
   return (
-    <instancedMesh ref={ref} args={[undefined, undefined, rocks.length]} castShadow receiveShadow>
+    <instancedMesh ref={ref} args={[undefined, undefined, rocks.length]} castShadow receiveShadow frustumCulled>
       <dodecahedronGeometry args={[1, 0]} />
       <meshStandardMaterial color={color} roughness={0.9} />
     </instancedMesh>
@@ -814,15 +814,15 @@ export function InstancedStreetLights({ streetlights }: any) {
 
   return (
     <group>
-      <instancedMesh ref={poleRef} args={[undefined, undefined, streetlights.length]} castShadow receiveShadow>
+      <instancedMesh ref={poleRef} args={[undefined, undefined, streetlights.length]} castShadow receiveShadow frustumCulled>
         <cylinderGeometry args={[0.2, 0.2, 8, 8]} />
         <meshStandardMaterial color="#3f3f46" />
       </instancedMesh>
-      <instancedMesh ref={headRef} args={[undefined, undefined, streetlights.length]} castShadow receiveShadow>
+      <instancedMesh ref={headRef} args={[undefined, undefined, streetlights.length]} castShadow receiveShadow frustumCulled>
         <boxGeometry args={[3, 0.2, 0.4]} />
         <meshStandardMaterial color="#3f3f46" />
       </instancedMesh>
-      <instancedMesh ref={lightRef} args={[undefined, undefined, streetlights.length]}>
+      <instancedMesh ref={lightRef} args={[undefined, undefined, streetlights.length]} frustumCulled>
         <boxGeometry args={[0.4, 0.1, 0.3]} />
         <meshStandardMaterial color="#fef08a" emissive="#fef08a" emissiveIntensity={2} />
       </instancedMesh>
@@ -865,7 +865,7 @@ export function InstancedBuildings({ buildings }: any) {
   if (buildings.length === 0) return null;
 
   return (
-    <instancedMesh ref={ref} args={[undefined, undefined, buildings.length]} castShadow receiveShadow>
+    <instancedMesh ref={ref} args={[undefined, undefined, buildings.length]} castShadow receiveShadow frustumCulled>
       <boxGeometry args={[1, 1, 1]} />
       <meshStandardMaterial roughness={0.8} />
     </instancedMesh>

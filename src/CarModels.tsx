@@ -5,27 +5,32 @@ import { debugData } from './store';
 
 // Shared geometries and materials for performance
 const sharedMaterials = {
-  glass: new MeshStandardMaterial({ color: "#111111", roughness: 0.1, metalness: 0.8 }),
-  chrome: new MeshStandardMaterial({ color: "#cccccc", roughness: 0.2, metalness: 0.9 }),
-  rubber: new MeshStandardMaterial({ color: "#111111", roughness: 0.9 }),
-  sovietBody: new MeshStandardMaterial({ color: "#d4d4ce" }),
-  euroBody: new MeshStandardMaterial({ color: "#fef08a" }),
-  sportsBody: new MeshStandardMaterial({ color: "#ef4444" }),
-  muscleBody: new MeshStandardMaterial({ color: "#3b82f6" }),
-  volvoBody: new MeshStandardMaterial({ color: "#f8fafc" }),
-  cyberBody: new MeshStandardMaterial({ color: "#18181b", metalness: 0.9, roughness: 0.1 }),
+  glass: new MeshStandardMaterial({ color: "#050505", roughness: 0.05, metalness: 0.9, transparent: true, opacity: 0.8 }),
+  chrome: new MeshStandardMaterial({ color: "#ffffff", roughness: 0.1, metalness: 1.0 }),
+  rubber: new MeshStandardMaterial({ color: "#111111", roughness: 0.9, metalness: 0.1 }),
+  sovietBody: new MeshStandardMaterial({ color: "#d4d4ce", roughness: 0.4, metalness: 0.3 }),
+  euroBody: new MeshStandardMaterial({ color: "#fef08a", roughness: 0.3, metalness: 0.4 }),
+  sportsBody: new MeshStandardMaterial({ color: "#ef4444", roughness: 0.2, metalness: 0.6, clearcoat: 1.0, clearcoatRoughness: 0.1 }),
+  muscleBody: new MeshStandardMaterial({ color: "#3b82f6", roughness: 0.25, metalness: 0.5, clearcoat: 0.8 }),
+  volvoBody: new MeshStandardMaterial({ color: "#f8fafc", roughness: 0.3, metalness: 0.4 }),
+  cyberBody: new MeshStandardMaterial({ color: "#18181b", metalness: 0.9, roughness: 0.1, clearcoat: 1.0 }),
   cyberAccent: new MeshStandardMaterial({ color: "#06b6d4", emissive: "#06b6d4", emissiveIntensity: 2 }),
-  truckBody: new MeshStandardMaterial({ color: "#166534", roughness: 0.6 }),
-  f1Body: new MeshStandardMaterial({ color: "#dc2626", metalness: 0.5, roughness: 0.2 }),
+  truckBody: new MeshStandardMaterial({ color: "#166534", roughness: 0.6, metalness: 0.2 }),
+  f1Body: new MeshStandardMaterial({ color: "#dc2626", metalness: 0.5, roughness: 0.2, clearcoat: 1.0 }),
 };
 
 function BrakeLight({ position, args, geometry: Geometry = 'boxGeometry', rotation }: any) {
   const materialRef = useRef<MeshStandardMaterial>(null);
+  const lightRef = useRef<PointLight>(null);
   
   useFrame(() => {
     const isBraking = debugData.isBraking;
+    const intensity = isBraking ? 4 : 0.5;
     if (materialRef.current) {
-      materialRef.current.emissiveIntensity = isBraking ? 4 : 0.5;
+      materialRef.current.emissiveIntensity = intensity;
+    }
+    if (lightRef.current) {
+      lightRef.current.intensity = isBraking ? 2 : 0;
     }
   });
 
@@ -35,6 +40,7 @@ function BrakeLight({ position, args, geometry: Geometry = 'boxGeometry', rotati
         {Geometry === 'boxGeometry' ? <boxGeometry args={args} /> : <cylinderGeometry args={args} />}
         <meshStandardMaterial ref={materialRef} color="#dc2626" emissive="#ff0000" toneMapped={false} />
       </mesh>
+      <pointLight ref={lightRef} color="#ff0000" distance={5} decay={2} />
     </group>
   );
 }
@@ -46,6 +52,17 @@ function HeadLight({ position, args, geometry: Geometry = 'boxGeometry', rotatio
         {Geometry === 'boxGeometry' ? <boxGeometry args={args} /> : <cylinderGeometry args={args} />}
         <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={2} toneMapped={false} />
       </mesh>
+      <spotLight 
+        position={[0, 0, 0]} 
+        target-position={[0, 0, 10]} 
+        color="#ffffff" 
+        intensity={5} 
+        distance={40} 
+        angle={Math.PI / 4} 
+        penumbra={0.5} 
+        decay={1.5} 
+        castShadow 
+      />
     </group>
   );
 }
